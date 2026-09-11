@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1問1答クイズ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="title-wrap">
+          <span class="title-emoji" aria-hidden="true">🌟</span>
+          <div>
+            <h1>1問1答クイズ</h1>
+          </div>
+        </div>
+        <div class="score-box">
+          <span>カテゴリ成績</span>
+          <div id="score" class="category-summary"></div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel quiz-panel">
+          <div class="quiz-card">
+            <div class="quiz-category-row">
+              <div class="quiz-badge">今日のクイズ</div>
+              <label for="today-category-select" class="visually-hidden">カテゴリ選択</label>
+              <select id="today-category-select" class="quiz-category-select">
+                <option value="すべて">カテゴリ</option>
+                <option value="国語">国語</option>
+                <option value="算数">算数</option>
+                <option value="理科">理科</option>
+                <option value="社会">社会</option>
+                <option value="英語">英語</option>
+              </select>
+
+              <label for="today-grade-select" class="visually-hidden">学年選択</label>
+              <select id="today-grade-select" class="quiz-category-select">
+                <option value="すべて">学年</option>
+                <option value="1">1年生</option>
+                <option value="2">2年生</option>
+                <option value="3">3年生</option>
+                <option value="4">4年生</option>
+                <option value="5">5年生</option>
+                <option value="6">6年生</option>
+              </select>
+
+              <label for="today-difficulty-select" class="visually-hidden">難易度選択</label>
+              <select id="today-difficulty-select" class="quiz-category-select">
+                <option value="すべて">難易度</option>
+                <option value="30-39">偏差値30〜39</option>
+                <option value="40-49">偏差値40〜49</option>
+                <option value="50-59">偏差値50〜59</option>
+                <option value="60-69">偏差値60〜69</option>
+                <option value="70-79">偏差値70〜79</option>
+                <option value="80-80">偏差値80</option>
+              </select>
+
+              <label for="today-rate-select" class="visually-hidden">正答率選択</label>
+              <select id="today-rate-select" class="quiz-category-select">
+                <option value="すべて">正答率</option>
+                <option value="20">20%以下</option>
+                <option value="40">40%以下</option>
+                <option value="60">60%以下</option>
+                <option value="80">80%以下</option>
+                <option value="100">100%以下</option>
+              </select>
+            </div>
+            <div class="quiz-subject-row">
+              <div id="quiz-category" class="quiz-category">算数</div>
+              <div class="quiz-input-mode-panel" aria-label="回答方法">
+                <span class="quiz-input-mode-label">回答方式</span>
+                <label class="quiz-mode-option">
+                  <input type="radio" name="quiz-answer-mode" value="text" checked />
+                  <span>自由記入</span>
+                </label>
+                <label class="quiz-mode-option">
+                  <input type="radio" name="quiz-answer-mode" value="choice" />
+                  <span>選択式</span>
+                </label>
+              </div>
+            </div>
+            <h2 id="question-text">問題を追加してね！</h2>
+
+            <div class="answer-row">
+              <div id="quiz-answer-input-panel" class="quiz-answer-input-panel">
+                <label for="answer-field" class="visually-hidden">答え入力</label>
+                <input
+                  id="answer-field"
+                  type="text"
+                  maxlength="40"
+                  placeholder="こたえをいれてね"
+                />
+              </div>
+              <div id="quiz-answer-choice-panel" class="quiz-answer-choice-panel hidden" aria-live="polite"></div>
+              <button id="check-button" class="primary-button">こたえる</button>
+            </div>
+
+            <div id="result" class="result hidden" aria-live="polite"></div>
+
+            <div class="quiz-actions">
+              <button id="next-button" class="secondary-button hidden">つぎへ</button>
+              <button id="open-problem-subscreen" class="ghost-button" type="button" aria-controls="problem-subscreen">問題を管理</button>
+              <button id="restart-button" class="ghost-button">はじめから</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="problem-subscreen" class="problem-subscreen hidden" aria-hidden="true">
+      <div class="problem-subscreen-backdrop" data-close-subscreen></div>
+      <aside class="problem-sidepanel panel">
+        <div class="subscreen-header">
+          <h2>問題を管理</h2>
+          <button type="button" id="close-problem-subscreen" class="ghost-button">とじる</button>
+        </div>
+
+        <div class="management-tabs" aria-label="問題管理画面の切り替え">
+          <button type="button" class="management-tab active" data-management-panel="generation">問題を生成</button>
+          <button type="button" class="management-tab" data-management-panel="list">登録済みの問題一覧</button>
+        </div>
+
+        <div id="problem-generation-panel" class="management-panel">
+          <form id="problem-form" class="problem-form">
+            <label for="question-input">問題</label>
+            <input
+              id="question-input"
+              name="question"
+              type="text"
+              maxlength="80"
+              placeholder="例：1＋1はなんですか？"
+            />
+
+            <label for="category-input">教科</label>
+            <select id="category-input" name="category">
+              <option value="国語">国語</option>
+              <option value="算数">算数</option>
+              <option value="理科">理科</option>
+              <option value="社会">社会</option>
+              <option value="英語">英語</option>
+            </select>
+
+            <label for="answer-input">答え</label>
+            <input
+              id="answer-input"
+              name="answer"
+              type="text"
+              maxlength="40"
+              placeholder="例：2"
+            />
+
+            <label for="problem-grade-input">学年</label>
+            <select id="problem-grade-input" name="grade">
+              <option value="1">1年生</option>
+              <option value="2">2年生</option>
+              <option value="3">3年生</option>
+              <option value="4">4年生</option>
+              <option value="5">5年生</option>
+              <option value="6">6年生</option>
+            </select>
+
+            <label for="problem-difficulty-input">難易度（偏差値）</label>
+            <select id="problem-difficulty-input" name="difficulty">
+              <option value="30">30</option>
+              <option value="40">40</option>
+              <option value="50" selected>50</option>
+              <option value="60">60</option>
+              <option value="70">70</option>
+              <option value="80">80</option>
+            </select>
+
+            <div class="button-row">
+              <button type="submit" class="primary-button">追加する</button>
+              <button type="button" id="reset-all" class="secondary-button">ぜんぶ消す</button>
+            </div>
+          </form>
+
+          <div class="excel-import">
+            <h3>Excelからまとめて登録</h3>
+            <label for="excel-file-input">Excelファイル</label>
+            <input id="excel-file-input" type="file" accept=".xlsx,.xls,.csv" />
+
+            <div class="button-row">
+              <button type="button" id="import-excel-button" class="secondary-button">Excelを取り込む</button>
+            </div>
+
+            <p class="excel-import-help">A列=問題、B列=回答、C列=学年、D列=科目、E列=難易度</p>
+            <p id="excel-import-message" class="form-message" aria-live="polite"></p>
+            <div id="excel-import-progress" class="import-progress hidden" aria-live="polite"></div>
+            <div id="excel-import-summary" class="import-summary hidden" aria-live="polite"></div>
+            <button type="button" id="excel-import-confirm-button" class="primary-button hidden">OK</button>
+          </div>
+
+          <div class="ai-generator">
+            <h3>AIで問題を作る</h3>
+            <label for="ai-request">やってほしいことを伝えよう</label>
+            <textarea
+              id="ai-request"
+              rows="4"
+              placeholder="例：小学1年生向けのたし算を3問、国語を1問、理科を1問作って"
+            ></textarea>
+
+            <label for="ai-api-key">ChatGPT APIキー（任意）</label>
+            <input
+              id="ai-api-key"
+              type="password"
+              placeholder="OpenAI互換のAPIキーを入力"
+            />
+
+            <label for="ai-api-endpoint">ChatGPT API URL（任意）</label>
+            <input
+              id="ai-api-endpoint"
+              type="url"
+              value="https://api.openai.com/v1/chat/completions"
+            />
+
+            <label for="ai-source-url">参考URL（任意）</label>
+            <input
+              id="ai-source-url"
+              type="url"
+              placeholder="https://example.com"
+            />
+
+            <label for="ai-source-text">参考資料の文章（任意）</label>
+            <textarea
+              id="ai-source-text"
+              rows="3"
+              placeholder="Webページや資料の文章をそのまま貼ってね"
+            ></textarea>
+
+            <label for="ai-source-image">資料画像（カメラ/写真）</label>
+            <input
+              id="ai-source-image"
+              type="file"
+              accept="image/*"
+              capture="environment"
+            />
+
+            <div class="button-row">
+              <button type="button" id="generate-ai" class="secondary-button">ChatGPTで作る</button>
+            </div>
+
+            <div class="structured-ai-fields">
+              <h4>項目入力で作る</h4>
+
+              <label for="ai-grade">学年</label>
+              <select id="ai-grade">
+                <option value="1">1年生</option>
+                <option value="2">2年生</option>
+                <option value="3">3年生</option>
+                <option value="4">4年生</option>
+                <option value="5">5年生</option>
+                <option value="6">6年生</option>
+              </select>
+
+              <label for="ai-subject">科目</label>
+              <select id="ai-subject">
+                <option value="国語">国語</option>
+                <option value="算数">算数</option>
+                <option value="理科">理科</option>
+                <option value="社会">社会</option>
+                <option value="英語">英語</option>
+              </select>
+
+              <label for="ai-field">分野</label>
+              <input id="ai-field" type="text" maxlength="40" placeholder="例：ひらがな、しぜん、せかい" />
+
+              <label for="ai-difficulty">難易度（偏差値）</label>
+              <div class="difficulty-slider-wrap">
+                <input id="ai-difficulty" type="range" min="30" max="80" step="1" value="50" />
+                <output id="ai-difficulty-value" for="ai-difficulty">50</output>
+              </div>
+
+              <label for="ai-count">問題数</label>
+              <input id="ai-count" type="number" min="1" max="10" value="3" />
+
+              <div class="button-row">
+                <button type="button" id="generate-ai-structured" class="ghost-button">項目入力で作る</button>
+              </div>
+            </div>
+
+            <p id="ai-message" class="form-message" aria-live="polite"></p>
+          </div>
+
+          <p id="form-message" class="form-message" aria-live="polite"></p>
+        </div>
+
+        <div id="problem-list-panel" class="management-panel hidden">
+          <div class="problem-list-wrap">
+            <h3>問題一覧</h3>
+            <label for="problem-search" class="visually-hidden">キーワード検索</label>
+            <input
+              id="problem-search"
+              type="search"
+              placeholder="キーワードで検索"
+              aria-label="キーワード検索"
+            />
+            <ul id="problem-list" class="problem-list"></ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
