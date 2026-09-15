@@ -16,7 +16,7 @@
           </div>
         </div>
         <div id="header-score-box" class="score-box hidden">
-          <span>カテゴリ成績</span>
+          <span>前回の模試結果</span>
           <div id="score" class="category-summary"></div>
         </div>
       </header>
@@ -224,6 +224,44 @@
 
       <main id="score-view" class="layout hidden">
         <section class="panel score-panel">
+          <div class="score-tools" aria-label="成績情報の入力">
+            <button type="button" id="toggle-school-editor" class="secondary-button">志望校入力</button>
+            <button type="button" id="toggle-mock-editor" class="secondary-button">模試結果入力</button>
+          </div>
+          <section id="school-editor" class="score-editor hidden" aria-labelledby="school-editor-heading">
+            <h3 id="school-editor-heading">志望校入力</h3>
+            <form id="school-form" class="score-input-form">
+              <div class="school-input-grid">
+                <label for="school-choice-1">第一志望校</label><input id="school-choice-1" type="text" maxlength="80" />
+                <label for="school-choice-2">第二志望校</label><input id="school-choice-2" type="text" maxlength="80" />
+                <label for="school-choice-3">第三志望校</label><input id="school-choice-3" type="text" maxlength="80" />
+                <label for="school-choice-4">第四志望校</label><input id="school-choice-4" type="text" maxlength="80" />
+                <label for="school-choice-5">第五志望校</label><input id="school-choice-5" type="text" maxlength="80" />
+              </div>
+              <button type="submit" class="primary-button">保存する</button>
+              <p id="school-message" class="form-message" aria-live="polite"></p>
+            </form>
+          </section>
+          <section id="mock-editor" class="score-editor hidden" aria-labelledby="mock-editor-heading">
+            <h3 id="mock-editor-heading">模試結果入力</h3>
+            <form id="mock-form" class="score-input-form">
+              <label for="mock-date">受験日</label>
+              <input id="mock-date" type="date" />
+              <div class="mock-input-grid">
+                <div class="mock-input-heading"><span>教科</span><span>点数</span><span>偏差値</span></div>
+                <label for="mock-score-国語">国語</label><input id="mock-score-国語" type="number" min="0" max="999" /><input id="mock-deviation-国語" type="number" min="0" max="100" step="0.1" />
+                <label for="mock-score-算数">算数</label><input id="mock-score-算数" type="number" min="0" max="999" /><input id="mock-deviation-算数" type="number" min="0" max="100" step="0.1" />
+                <label for="mock-score-理科">理科</label><input id="mock-score-理科" type="number" min="0" max="999" /><input id="mock-deviation-理科" type="number" min="0" max="100" step="0.1" />
+                <label for="mock-score-社会">社会</label><input id="mock-score-社会" type="number" min="0" max="999" /><input id="mock-deviation-社会" type="number" min="0" max="100" step="0.1" />
+              </div>
+              <button type="submit" class="primary-button">保存する</button>
+              <p id="mock-message" class="form-message" aria-live="polite"></p>
+            </form>
+          </section>
+          <section class="score-school-summary" aria-labelledby="school-summary-heading">
+            <h3 id="school-summary-heading">志望校</h3>
+            <ol id="school-list" class="school-list"></ol>
+          </section>
           <div class="subscreen-header">
             <div>
               <p class="eyebrow">学習記録</p>
@@ -246,6 +284,10 @@
             </div>
             <p id="goal-message" class="form-message" aria-live="polite"></p>
           </section>
+          <div class="score-report-actions">
+            <button type="button" id="copy-parent-report" class="primary-button">保護者レポート作成</button>
+            <p id="report-message" class="form-message" aria-live="polite"></p>
+          </div>
         </section>
       </main>
     </div>
