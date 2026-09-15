@@ -15,17 +15,50 @@
             <h1>1問1答クイズ</h1>
           </div>
         </div>
-        <div class="score-box">
+        <div id="header-score-box" class="score-box hidden">
           <span>カテゴリ成績</span>
           <div id="score" class="category-summary"></div>
         </div>
       </header>
 
-      <main class="layout">
+      <main id="home-view" class="home-view">
+        <section class="home-intro">
+          <p class="eyebrow">まなびのメニュー</p>
+          <h2>今日は何をする？</h2>
+          <p>自分のペースで、楽しく学ぼう。</p>
+        </section>
+        <section class="home-menu" aria-label="学習メニュー">
+          <button type="button" class="home-menu-card home-menu-input" data-view="study">
+            <span class="home-menu-icon" aria-hidden="true">📖</span>
+            <span class="home-menu-title">勉強する</span>
+            <span class="home-menu-note">インプット</span>
+          </button>
+          <button type="button" class="home-menu-card home-menu-output" data-view="quiz">
+            <span class="home-menu-icon" aria-hidden="true">✏️</span>
+            <span class="home-menu-title">テストする</span>
+            <span class="home-menu-note">アウトプット</span>
+          </button>
+          <button type="button" class="home-menu-card home-menu-record" data-view="score">
+            <span class="home-menu-icon" aria-hidden="true">📊</span>
+            <span class="home-menu-title">勉強記録・成績を確認する</span>
+            <span class="home-menu-note">これまでのがんばりを見る</span>
+          </button>
+          <button type="button" class="home-menu-card home-menu-manage" data-view="manage">
+            <span class="home-menu-icon" aria-hidden="true">🗂️</span>
+            <span class="home-menu-title">問題を管理</span>
+            <span class="home-menu-note">問題を追加・整理する</span>
+          </button>
+        </section>
+      </main>
+
+      <main id="quiz-view" class="layout hidden">
         <section class="panel quiz-panel">
           <div class="quiz-card">
-            <div class="quiz-category-row">
+            <div class="quiz-home-row">
               <div class="quiz-badge">今日のクイズ</div>
+              <button type="button" class="ghost-button quiz-home-button" data-view="home">ホーム</button>
+            </div>
+            <div class="quiz-category-row">
               <label for="today-category-select" class="visually-hidden">カテゴリ選択</label>
               <select id="today-category-select" class="quiz-category-select">
                 <option value="すべて">カテゴリ</option>
@@ -81,6 +114,17 @@
                   <span>選択式</span>
                 </label>
               </div>
+              <div class="quiz-order-switch" aria-label="出題方法">
+                <span class="quiz-input-mode-label">出題方法</span>
+                <label class="quiz-mode-option">
+                  <input type="radio" name="quiz-order-mode" value="serial" checked />
+                  <span>連番</span>
+                </label>
+                <label class="quiz-mode-option">
+                  <input type="radio" name="quiz-order-mode" value="random" />
+                  <span>ランダム</span>
+                </label>
+              </div>
             </div>
             <h2 id="question-text">問題を追加してね！</h2>
 
@@ -100,12 +144,108 @@
 
             <div id="result" class="result hidden" aria-live="polite"></div>
 
+            <div class="today-goal-progress" aria-live="polite">
+              <div class="today-goal-heading">
+                <span id="today-goal-label">今日のノルマ</span>
+                <strong id="today-goal-value">0 / 10</strong>
+              </div>
+              <div class="goal-progress-track"><span id="today-goal-bar"></span></div>
+            </div>
+
             <div class="quiz-actions">
               <button id="next-button" class="secondary-button hidden">つぎへ</button>
               <button id="open-problem-subscreen" class="ghost-button" type="button" aria-controls="problem-subscreen">問題を管理</button>
               <button id="restart-button" class="ghost-button">はじめから</button>
             </div>
           </div>
+        </section>
+      </main>
+
+      <main id="study-view" class="layout hidden">
+        <section class="panel study-panel">
+          <div class="subscreen-header">
+            <div>
+              <p class="eyebrow">インプット</p>
+              <h2>一問一答で覚えよう</h2>
+            </div>
+            <button type="button" class="ghost-button" data-view="home">ホーム</button>
+          </div>
+          <div class="study-filter-row">
+            <label for="study-category-select">カテゴリ</label>
+            <select id="study-category-select">
+              <option value="すべて">すべて</option>
+              <option value="国語">国語</option>
+              <option value="算数">算数</option>
+              <option value="理科">理科</option>
+              <option value="社会">社会</option>
+              <option value="英語">英語</option>
+            </select>
+            <label for="study-grade-select">学年</label>
+            <select id="study-grade-select" class="study-filter-select">
+              <option value="すべて">すべて</option>
+              <option value="1">1年生</option><option value="2">2年生</option><option value="3">3年生</option>
+              <option value="4">4年生</option><option value="5">5年生</option><option value="6">6年生</option>
+            </select>
+            <label for="study-difficulty-select">難易度</label>
+            <select id="study-difficulty-select" class="study-filter-select">
+              <option value="すべて">すべて</option>
+              <option value="30-39">偏差値30〜39</option><option value="40-49">偏差値40〜49</option>
+              <option value="50-59">偏差値50〜59</option><option value="60-69">偏差値60〜69</option>
+              <option value="70-79">偏差値70〜79</option><option value="80-80">偏差値80</option>
+            </select>
+            <label for="study-rate-select">正答率</label>
+            <select id="study-rate-select" class="study-filter-select">
+              <option value="すべて">すべて</option>
+              <option value="20">20%以下</option><option value="40">40%以下</option><option value="60">60%以下</option>
+              <option value="80">80%以下</option><option value="100">100%以下</option>
+            </select>
+            <label for="study-review-select">復習</label>
+            <select id="study-review-select" class="study-filter-select">
+              <option value="all">すべて</option>
+              <option value="yesterday-wrong">前日に間違えた問題</option>
+            </select>
+            <label class="study-answer-switch">
+              <input id="study-answer-visible" type="checkbox" />
+              <span>答えを表示</span>
+            </label>
+          </div>
+          <div class="study-card">
+            <div id="study-progress" class="study-progress"></div>
+            <div id="study-category" class="quiz-category">カテゴリ</div>
+            <h2 id="study-question">問題を追加してね！</h2>
+            <div id="study-answer" class="study-answer hidden" aria-live="polite"></div>
+            <div class="study-actions">
+              <button type="button" id="study-reveal-button" class="primary-button">答えを見る</button>
+              <button type="button" id="study-next-button" class="secondary-button hidden">つぎの問題</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <main id="score-view" class="layout hidden">
+        <section class="panel score-panel">
+          <div class="subscreen-header">
+            <div>
+              <p class="eyebrow">学習記録</p>
+              <h2>勉強記録・成績</h2>
+            </div>
+            <button type="button" class="ghost-button" data-view="home">ホーム</button>
+          </div>
+          <div id="score-page" class="score-page-summary"></div>
+          <section class="daily-goal-panel" aria-labelledby="daily-goal-heading">
+            <h3 id="daily-goal-heading">一日のノルマ</h3>
+            <div class="daily-goal-form">
+              <label for="goal-type-select">目標</label>
+              <select id="goal-type-select">
+                <option value="score">総合スコア</option>
+                <option value="questions">問題数</option>
+              </select>
+              <label for="goal-value-input">数値</label>
+              <input id="goal-value-input" type="number" min="1" max="999" value="10" />
+              <button type="button" id="save-goal-button" class="secondary-button">設定する</button>
+            </div>
+            <p id="goal-message" class="form-message" aria-live="polite"></p>
+          </section>
         </section>
       </main>
     </div>
@@ -194,7 +334,7 @@
             <button type="button" id="excel-import-confirm-button" class="primary-button hidden">OK</button>
           </div>
 
-          <div class="ai-generator">
+          <div class="ai-generator grayed-out">
             <h3>AIで問題を作る</h3>
             <label for="ai-request">やってほしいことを伝えよう</label>
             <textarea
@@ -243,7 +383,7 @@
               <button type="button" id="generate-ai" class="secondary-button">ChatGPTで作る</button>
             </div>
 
-            <div class="structured-ai-fields">
+            <div class="structured-ai-fields grayed-out">
               <h4>項目入力で作る</h4>
 
               <label for="ai-grade">学年</label>

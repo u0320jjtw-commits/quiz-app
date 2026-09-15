@@ -1,4 +1,6 @@
 const STORAGE_KEY = 'quiz-app-problems-v1';
+const GOAL_STORAGE_KEY = 'quiz-app-daily-goal-v1';
+const HISTORY_STORAGE_KEY = 'quiz-app-answer-history-v1';
 const DEFAULT_CATEGORY = '算数';
 const DEFAULT_GRADE = 1;
 const DEFAULT_DIFFICULTY = 50;
@@ -610,6 +612,24 @@ const todayGradeSelect = document.getElementById('today-grade-select');
 const todayDifficultySelect = document.getElementById('today-difficulty-select');
 const todayRateSelect = document.getElementById('today-rate-select');
 const scoreElement = document.getElementById('score');
+const headerScoreBox = document.getElementById('header-score-box');
+const homeView = document.getElementById('home-view');
+const quizView = document.getElementById('quiz-view');
+const studyView = document.getElementById('study-view');
+const scoreView = document.getElementById('score-view');
+const scorePage = document.getElementById('score-page');
+const studyCategorySelect = document.getElementById('study-category-select');
+const studyGradeSelect = document.getElementById('study-grade-select');
+const studyDifficultySelect = document.getElementById('study-difficulty-select');
+const studyRateSelect = document.getElementById('study-rate-select');
+const studyReviewSelect = document.getElementById('study-review-select');
+const studyAnswerVisible = document.getElementById('study-answer-visible');
+const studyProgress = document.getElementById('study-progress');
+const studyCategory = document.getElementById('study-category');
+const studyQuestion = document.getElementById('study-question');
+const studyAnswer = document.getElementById('study-answer');
+const studyRevealButton = document.getElementById('study-reveal-button');
+const studyNextButton = document.getElementById('study-next-button');
 const questionText = document.getElementById('question-text');
 const quizCategory = document.getElementById('quiz-category');
 const answerField = document.getElementById('answer-field');
@@ -617,12 +637,19 @@ const quizAnswerInputPanel = document.getElementById('quiz-answer-input-panel');
 const quizAnswerChoicePanel = document.getElementById('quiz-answer-choice-panel');
 const checkButton = document.getElementById('check-button');
 const result = document.getElementById('result');
+const todayGoalLabel = document.getElementById('today-goal-label');
+const todayGoalValue = document.getElementById('today-goal-value');
+const todayGoalBar = document.getElementById('today-goal-bar');
 const nextButton = document.getElementById('next-button');
 const openProblemSubscreenButton = document.getElementById('open-problem-subscreen');
 const closeProblemSubscreenButton = document.getElementById('close-problem-subscreen');
 const problemSubscreen = document.getElementById('problem-subscreen');
 const restartButton = document.getElementById('restart-button');
 const resetAllButton = document.getElementById('reset-all');
+const goalTypeSelect = document.getElementById('goal-type-select');
+const goalValueInput = document.getElementById('goal-value-input');
+const saveGoalButton = document.getElementById('save-goal-button');
+const goalMessage = document.getElementById('goal-message');
 
 let problems = loadProblems();
 let currentIndex = 0;
@@ -634,6 +661,12 @@ let selectedQuizDifficulty = 'すべて';
 let selectedQuizRateLimit = 'すべて';
 let selectedAnswerMode = 'text';
 let selectedAnswerChoiceIndex = null;
+let studyIndex = 0;
+let quizOrderMode = 'serial';
+let quizProblemOrder = [];
+let studyFilters = { category: 'すべて', grade: 'すべて', difficulty: 'すべて', rate: 'すべて', review: 'all' };
+let dailyGoal = loadDailyGoal();
+let answerHistory = loadAnswerHistory();
 
 function normalizeProblem(problem) {
   const mappedCategory = problem.category && CATEGORY_ALIASES[problem.category];
@@ -659,6 +692,7 @@ function normalizeProblem(problem) {
     id: problem.id || crypto.randomUUID(),
     question: String(problem.question || '').trim(),
     answer: String(problem.answer || '').trim(),
+    explanation: String(problem.explanation || '').trim(),
     category: safeCategory,
     grade: safeGrade,
     difficulty: safeDifficulty,
@@ -697,6 +731,88 @@ function loadProblems() {
 
 function saveProblems() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(problems.map((problem) => normalizeProblem(problem))));
+}
+
+function loadDailyGoal() {
+  try {
+    const savedGoal = JSON.parse(localStorage.getItem(GOAL_STORAGE_KEY));
+    if (savedGoal && ['score', 'questions'].includes(savedGoal.type) && Number(savedGoal.value) > 0) {
+      return { type: savedGoal.type, value: Number(savedGoal.value) };
+    }
+  } catch (error) {
+    console.error('ノルマ設定の読み込みに失敗しました', error);
+  }
+
+  return { type: 'score', value: 10 };
+}
+
+function saveDailyGoal() {
+  localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(dailyGoal));
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function loadAnswerHistory() {
+  try {
+    const savedHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY));
+    if (Array.isArray(savedHistory)) {
+      return savedHistory.filter((entry) => entry.date && entry.category);
+    }
+  } catch (error) {
+    console.error('回答履歴の読み込みに失敗しました', error);
+  }
+
+  return [];
+}
+
+function saveAnswerHistory() {
+  answerHistory = answerHistory.slice(-5000);
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(answerHistory));
+}
+
+function recordAnswer(problemId, category, isCorrect) {
+  answerHistory.push({ date: getLocalDateKey(), problemId, category, correct: isCorrect });
+  saveAnswerHistory();
+}
+
+function getPreviousDateKey() {
+  const previousDate = new Date();
+  previousDate.setDate(previousDate.getDate() - 1);
+  return getLocalDateKey(previousDate);
+}
+
+function getYesterdayWrongProblemIds() {
+  return new Set(
+    answerHistory
+      .filter((entry) => entry.date === getPreviousDateKey() && entry.correct === false && entry.problemId)
+      .map((entry) => entry.problemId)
+  );
+}
+
+function getTodayProgress() {
+  const todayEntries = answerHistory.filter((entry) => entry.date === getLocalDateKey());
+  const scoreValue = todayEntries.filter((entry) => entry.correct).length;
+  const questionValue = todayEntries.length;
+  const currentValue = dailyGoal.type === 'score' ? scoreValue : questionValue;
+  return { scoreValue, questionValue, currentValue };
+}
+
+function renderTodayGoalProgress() {
+  if (!todayGoalValue || !todayGoalBar) {
+    return;
+  }
+
+  const { currentValue } = getTodayProgress();
+  const unit = dailyGoal.type === 'score' ? '点' : '問';
+  const percentage = Math.min(Math.round((currentValue / dailyGoal.value) * 100), 100);
+  todayGoalLabel.textContent = `今日のノルマ（${dailyGoal.type === 'score' ? '総合スコア' : '問題数'}）`;
+  todayGoalValue.textContent = `${currentValue} / ${dailyGoal.value}${unit}`;
+  todayGoalBar.style.width = `${percentage}%`;
 }
 
 function setFormMessage(text, type = 'normal') {
@@ -1055,6 +1171,16 @@ function getVisibleProblems() {
     visibleProblems = visibleProblems.filter((problem) => getProblemRate(problem).rate <= rateLimit);
   }
 
+  if (quizOrderMode === 'random') {
+    const visibleIds = visibleProblems.map((problem) => problem.id).sort().join(',');
+    const orderedIds = quizProblemOrder.map((problem) => problem.id).sort().join(',');
+    if (visibleIds !== orderedIds) {
+      quizProblemOrder = shuffleArray(visibleProblems);
+    }
+    return quizProblemOrder;
+  }
+
+  quizProblemOrder = visibleProblems;
   return visibleProblems;
 }
 
@@ -1167,7 +1293,201 @@ function updateScore() {
       )
       .join('')}
   `;
-}
+    renderScorePage();
+    renderTodayGoalProgress();
+  }
+
+  function renderScorePage() {
+    if (!scorePage) {
+      return;
+    }
+
+    const summaries = getCategorySummary();
+    const overall = getOverallSummary();
+    const dailyRecords = Array.from({ length: 30 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - index));
+      const dateKey = getLocalDateKey(date);
+      const entries = answerHistory.filter((entry) => entry.date === dateKey);
+      const categories = CATEGORY_OPTIONS.reduce((result, category) => {
+        const categoryEntries = entries.filter((entry) => entry.category === category);
+        const correct = categoryEntries.filter((entry) => entry.correct).length;
+        result[category] = {
+          attempts: categoryEntries.length,
+          correct,
+          rate: categoryEntries.length ? Math.round((correct / categoryEntries.length) * 100) : 0,
+          score: correct,
+        };
+        return result;
+      }, {});
+      const correct = entries.filter((entry) => entry.correct).length;
+      return {
+        dateKey,
+        label: `${date.getMonth() + 1}/${date.getDate()}`,
+        categories,
+        attempts: entries.length,
+        correct,
+        rate: entries.length ? Math.round((correct / entries.length) * 100) : 0,
+        score: correct,
+      };
+    });
+    const maxChartValue = Math.max(...dailyRecords.map((record) => record.attempts), 1);
+    const chartWidth = 900;
+    const chartHeight = 260;
+    const chartPadding = { top: 20, right: 18, bottom: 34, left: 34 };
+    const chartInnerWidth = chartWidth - chartPadding.left - chartPadding.right;
+    const chartInnerHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+    const chartX = (index) => chartPadding.left + (index / (dailyRecords.length - 1)) * chartInnerWidth;
+    const chartY = (value) => chartPadding.top + chartInnerHeight - (value / maxChartValue) * chartInnerHeight;
+    const chartSeries = [
+      ...CATEGORY_OPTIONS.map((category, index) => ({
+        label: category,
+        color: ['#e98989', '#e7a83f', '#4ba9b8', '#8e78c7', '#63a66d'][index],
+        values: dailyRecords.map((record) => record.categories[category].attempts),
+      })),
+      { label: '合計', color: '#4d3a5a', values: dailyRecords.map((record) => record.attempts) },
+    ];
+    const chartGrid = [0, 0.5, 1].map((ratio) => {
+      const y = chartY(maxChartValue * ratio);
+      return `<line x1="${chartPadding.left}" y1="${y}" x2="${chartWidth - chartPadding.right}" y2="${y}" class="chart-grid-line" /><text x="${chartPadding.left - 8}" y="${y + 4}" text-anchor="end" class="chart-axis-label">${Math.round(maxChartValue * ratio)}</text>`;
+    }).join('');
+    const chartLines = chartSeries.map((series) => {
+      const points = series.values.map((value, index) => `${chartX(index)},${chartY(value)}`).join(' ');
+      const dots = series.values.map((value, index) => `<circle cx="${chartX(index)}" cy="${chartY(value)}" r="2.5" fill="${series.color}" />`).join('');
+      return `<polyline points="${points}" fill="none" stroke="${series.color}" stroke-width="${series.label === '合計' ? 3 : 2}" />${dots}`;
+    }).join('');
+    const chartDateLabels = dailyRecords.filter((_, index) => index % 5 === 0 || index === dailyRecords.length - 1)
+      .map((record) => {
+        const index = dailyRecords.indexOf(record);
+        return `<text x="${chartX(index)}" y="${chartHeight - 8}" text-anchor="middle" class="chart-axis-label">${record.label}</text>`;
+      }).join('');
+    const chartLegend = chartSeries.map((series) => `<span><i style="background:${series.color}"></i>${series.label}</span>`).join('');
+    const categoryHeaders = CATEGORY_OPTIONS.map((category) => `<th colspan="4">${category}</th>`).join('');
+    const categoryCells = (record) => CATEGORY_OPTIONS.map((category) => {
+      const summary = record.categories[category];
+      const goalRate = dailyGoal.type === 'questions'
+        ? Math.round((summary.attempts / dailyGoal.value) * 100)
+        : Math.round((summary.score / dailyGoal.value) * 100);
+      return `<td>${summary.attempts}</td><td>${summary.rate}%</td><td>${summary.score}</td><td>${Math.min(goalRate, 999)}%</td>`;
+    }).join('');
+
+    scorePage.innerHTML = `
+      <div class="score-overview">
+        <span class="summary-label">総合スコア</span>
+        <strong>${overall.grade}</strong>
+        <span>${overall.correct}/${overall.attempts}問 · 正答率 ${overall.rate}%</span>
+      </div>
+      <div class="score-category-grid">
+        ${summaries.map(({ category, correct, attempts, rate, grade }) => `
+          <article class="score-category-card">
+            <div class="score-category-heading"><strong>${category}</strong><span>${grade}点</span></div>
+            <div class="score-meter"><span style="width: ${rate}%"></span></div>
+            <small>${correct}/${attempts}問正解 · 正答率 ${rate}%</small>
+          </article>
+        `).join('')}
+      </div>
+      <section class="daily-record-section">
+        <h3>直近30日の日別記録</h3>
+        <p class="daily-record-note">各カテゴリの順番：問題回答量・正答率・スコア・ノルマ達成率</p>
+        <div class="daily-record-table-wrap">
+          <table class="daily-record-table">
+            <thead><tr><th rowspan="2">日付</th>${categoryHeaders}<th colspan="4">合計</th></tr>
+              <tr>${CATEGORY_OPTIONS.concat('合計').map(() => '<th>量</th><th>率</th><th>点</th><th>達成</th>').join('')}</tr></thead>
+            <tbody>${dailyRecords.map((record) => `
+              <tr><th>${record.label}</th>${categoryCells(record)}<td>${record.attempts}</td><td>${record.rate}%</td><td>${record.score}</td><td>${Math.min(Math.round(((dailyGoal.type === 'questions' ? record.attempts : record.score) / dailyGoal.value) * 100), 999)}%</td></tr>
+            `).join('')}</tbody>
+          </table>
+        </div>
+      </section>
+      <section class="daily-chart-section">
+        <h3>カテゴリ別・合計の問題回答量</h3>
+        <div class="daily-chart-legend">${chartLegend}</div>
+        <div class="daily-line-chart-wrap">
+          <svg class="daily-line-chart" viewBox="0 0 ${chartWidth} ${chartHeight}" role="img" aria-label="直近30日の日別カテゴリ別と合計の問題回答量グラフ">
+            ${chartGrid}${chartLines}${chartDateLabels}
+          </svg>
+        </div>
+      </section>
+    `;
+  }
+
+  function switchView(viewName) {
+    const views = { home: homeView, quiz: quizView, study: studyView, score: scoreView };
+
+    Object.entries(views).forEach(([name, view]) => {
+      view?.classList.toggle('hidden', name !== viewName);
+    });
+
+    headerScoreBox?.classList.toggle('hidden', viewName !== 'score');
+
+    if (viewName === 'quiz') {
+      showQuestion();
+    }
+
+    if (viewName === 'study') {
+      showStudyQuestion();
+    }
+
+    if (viewName === 'score') {
+      renderScorePage();
+    }
+  }
+
+  function getStudyProblems() {
+    const yesterdayWrongProblemIds = getYesterdayWrongProblemIds();
+
+    return problems.filter((problem) => {
+      if (studyFilters.category !== 'すべて' && problem.category !== studyFilters.category) {
+        return false;
+      }
+      if (studyFilters.grade !== 'すべて' && Number(problem.grade) !== Number(studyFilters.grade)) {
+        return false;
+      }
+      if (studyFilters.difficulty !== 'すべて' && !matchesDifficultyRange(problem.difficulty, studyFilters.difficulty)) {
+        return false;
+      }
+      if (studyFilters.rate !== 'すべて' && getProblemRate(problem).rate > Number(studyFilters.rate)) {
+        return false;
+      }
+      if (studyFilters.review === 'yesterday-wrong' && !yesterdayWrongProblemIds.has(problem.id)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function getProblemExplanation(problem) {
+    return problem.explanation || `答えは「${problem.answer}」です。問題文のキーワードと答えを結びつけて覚えましょう。`;
+  }
+
+  function showStudyQuestion() {
+    const studyProblems = getStudyProblems();
+
+    if (studyProblems.length === 0) {
+      studyProgress.textContent = '';
+      studyCategory.textContent = 'カテゴリ';
+      studyQuestion.textContent = '問題を追加してね！';
+      studyAnswer.textContent = '';
+      studyAnswer.classList.add('hidden');
+      studyRevealButton.classList.add('hidden');
+      studyNextButton.classList.add('hidden');
+      return;
+    }
+
+    if (studyIndex >= studyProblems.length) {
+      studyIndex = 0;
+    }
+
+    const currentProblem = studyProblems[studyIndex];
+    studyProgress.textContent = `${studyIndex + 1} / ${studyProblems.length} 問`;
+    studyCategory.textContent = currentProblem.category;
+    studyQuestion.textContent = currentProblem.question;
+    studyAnswer.innerHTML = `<strong>答え：${currentProblem.answer}</strong><p>${getProblemExplanation(currentProblem)}</p>`;
+    const answerIsVisible = studyAnswerVisible?.checked === true;
+    studyAnswer.classList.toggle('hidden', !answerIsVisible);
+    studyRevealButton.classList.toggle('hidden', answerIsVisible);
+    studyNextButton.classList.toggle('hidden', !answerIsVisible);
+  }
 
 function openProblemSubscreen() {
   if (!problemSubscreen) {
@@ -1282,6 +1602,7 @@ function checkAnswer() {
   }
 
   currentProblem.stats.attempts += 1;
+  recordAnswer(currentProblem.id, currentProblem.category, isCorrect);
 
   if (isCorrect) {
     currentProblem.stats.correct += 1;
@@ -1289,6 +1610,7 @@ function checkAnswer() {
     updateScore();
     renderProblemList();
     saveProblems();
+    renderTodayGoalProgress();
 
     result.textContent = 'せいかい！すごいね！';
     result.classList.remove('error');
@@ -1312,6 +1634,7 @@ function checkAnswer() {
 
   renderProblemList();
   saveProblems();
+  renderTodayGoalProgress();
   answerField.disabled = true;
   checkButton.disabled = true;
   nextButton.classList.remove('hidden');
@@ -1332,6 +1655,7 @@ function moveToNextQuestion() {
 function resetQuiz() {
   currentIndex = 0;
   score = 0;
+  quizProblemOrder = [];
   updateScore();
   showQuestion();
 }
@@ -1840,6 +2164,41 @@ if (problemSubscreen) {
   });
 }
 
+document.querySelectorAll('[data-view]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const viewName = button.dataset.view;
+
+    if (viewName === 'manage') {
+      openProblemSubscreen();
+      return;
+    }
+
+    switchView(viewName);
+  });
+});
+
+if (studyRevealButton) {
+  studyRevealButton.addEventListener('click', () => {
+    studyAnswer.classList.remove('hidden');
+    studyRevealButton.classList.add('hidden');
+    studyNextButton.classList.remove('hidden');
+  });
+}
+
+if (studyNextButton) {
+  studyNextButton.addEventListener('click', () => {
+    studyIndex += 1;
+    showStudyQuestion();
+  });
+}
+
+if (studyCategorySelect) {
+  studyCategorySelect.addEventListener('change', () => {
+    studyIndex = 0;
+    showStudyQuestion();
+  });
+}
+
 restartButton.addEventListener('click', resetQuiz);
 
 resetAllButton.addEventListener('click', () => {
@@ -2055,6 +2414,45 @@ if (todayRateSelect) {
   });
 }
 
+document.querySelectorAll('input[name="quiz-order-mode"]').forEach((input) => {
+  input.addEventListener('change', (event) => {
+    quizOrderMode = event.target.value === 'random' ? 'random' : 'serial';
+    currentIndex = 0;
+    quizProblemOrder = [];
+    showQuestion();
+  });
+});
+
+const studyFilterControls = [
+  ['category', studyCategorySelect],
+  ['grade', studyGradeSelect],
+  ['difficulty', studyDifficultySelect],
+  ['rate', studyRateSelect],
+  ['review', studyReviewSelect],
+];
+
+studyFilterControls.forEach(([filterName, control]) => {
+  control?.addEventListener('change', (event) => {
+    studyFilters[filterName] = event.target.value;
+    studyIndex = 0;
+    showStudyQuestion();
+  });
+});
+
+studyAnswerVisible?.addEventListener('change', showStudyQuestion);
+
+if (saveGoalButton) {
+  saveGoalButton.addEventListener('click', () => {
+    const value = Math.min(Math.max(Number(goalValueInput.value) || 1, 1), 999);
+    dailyGoal = { type: goalTypeSelect.value === 'questions' ? 'questions' : 'score', value };
+    goalValueInput.value = String(value);
+    saveDailyGoal();
+    goalMessage.textContent = `${dailyGoal.type === 'score' ? '総合スコア' : '問題数'}のノルマを${value}に設定したよ！`;
+    renderScorePage();
+    renderTodayGoalProgress();
+  });
+}
+
 if (aiDifficultyInput && aiDifficultyValue) {
   aiDifficultyInput.addEventListener('input', (event) => {
     aiDifficultyValue.textContent = event.target.value;
@@ -2068,6 +2466,9 @@ document.querySelectorAll('.management-tab').forEach((tab) => {
 });
 
 setProblemAnswerMode(selectedAnswerMode);
+goalTypeSelect.value = dailyGoal.type;
+goalValueInput.value = String(dailyGoal.value);
 renderProblemList();
 updateScore();
-showQuestion();
+renderTodayGoalProgress();
+switchView('home');
