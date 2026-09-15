@@ -614,8 +614,6 @@ const todayCategorySelect = document.getElementById('today-category-select');
 const todayGradeSelect = document.getElementById('today-grade-select');
 const todayDifficultySelect = document.getElementById('today-difficulty-select');
 const todayRateSelect = document.getElementById('today-rate-select');
-const scoreElement = document.getElementById('score');
-const headerScoreBox = document.getElementById('header-score-box');
 const homeView = document.getElementById('home-view');
 const quizView = document.getElementById('quiz-view');
 const studyView = document.getElementById('study-view');
@@ -1344,7 +1342,6 @@ function getMockAggregate(subjects, subjectNames = MOCK_SUBJECTS) {
   const averageDeviation = entries.length
     ? Math.round((entries.reduce((sum, entry) => sum + Number(entry.deviation || 0), 0) / entries.length) * 10) / 10
     : 0;
-
   return { totalScore, averageDeviation };
 }
 
@@ -1360,38 +1357,29 @@ function getMockResultMarkup() {
     return `<tr><th>${subject}</th><td>${result.score}点</td><td>偏差値${result.deviation}</td></tr>`;
   }).join('');
 
-  return `
-    <p class="mock-result-date">受験日：${escapeHtml(lastMockResult.date)}</p>
-    <div class="mock-result-table-wrap">
-      <table class="mock-result-table">
-        <thead><tr><th>教科</th><th>点数</th><th>偏差値</th></tr></thead>
-        <tbody>${subjectRows}</tbody>
-      </table>
-    </div>
+  return `<p class="mock-result-date">受験日：${escapeHtml(lastMockResult.date)}</p>
+    <div class="mock-result-table-wrap"><table class="mock-result-table">
+      <thead><tr><th>教科</th><th>点数</th><th>偏差値</th></tr></thead><tbody>${subjectRows}</tbody>
+    </table></div>
     <div class="mock-aggregate-grid">
       <div><strong>2教科</strong><span>${twoSubject.totalScore}点 / 偏差値${twoSubject.averageDeviation}</span></div>
       <div><strong>4教科</strong><span>${fourSubject.totalScore}点 / 偏差値${fourSubject.averageDeviation}</span></div>
-    </div>
-  `;
+    </div>`;
 }
 
 function renderTargetSchools() {
   if (!schoolList) {
     return;
   }
-
   schoolList.innerHTML = targetSchools.map((school, index) => (
     `<li><span>${index + 1}志望</span><strong>${escapeHtml(school || '未入力')}</strong></li>`
   )).join('');
 }
 
 function updateScore() {
-  scoreElement.innerHTML = lastMockResult
-    ? getMockResultMarkup()
-    : '<span class="empty-state">模試結果はまだ入力されていません。</span>';
-    renderScorePage();
-    renderTodayGoalProgress();
-  }
+  renderScorePage();
+  renderTodayGoalProgress();
+}
 
   function renderScorePage() {
     if (!scorePage) {
@@ -1525,8 +1513,9 @@ function updateScore() {
         const goalValue = dailyGoal.type === 'questions' ? attempts : correct;
         return `${category}:${attempts}問/${attempts ? Math.round((correct / attempts) * 100) : 0}%/${Math.min(Math.round((goalValue / dailyGoal.value) * 100), 999)}%`;
       });
-
-      return `${dateKey} 合計${entries.length}問・正答率${entries.length ? Math.round((entries.filter((entry) => entry.correct).length / entries.length) * 100) : 0}%・ノルマ達成率${Math.min(Math.round(((dailyGoal.type === 'questions' ? entries.length : entries.filter((entry) => entry.correct).length) / dailyGoal.value) * 100), 999)}% | ${categories.join('、')}`;
+      const correct = entries.filter((entry) => entry.correct).length;
+      const goalValue = dailyGoal.type === 'questions' ? entries.length : correct;
+      return `${dateKey} 合計${entries.length}問・正答率${entries.length ? Math.round((correct / entries.length) * 100) : 0}%・ノルマ達成率${Math.min(Math.round((goalValue / dailyGoal.value) * 100), 999)}% | ${categories.join('、')}`;
     });
   }
 
@@ -1542,7 +1531,6 @@ function updateScore() {
     const mockText = lastMockResult
       ? `${lastMockResult.date}\n${MOCK_SUBJECTS.map((subject) => `${subject}: ${lastMockResult.subjects[subject].score}点 / 偏差値${lastMockResult.subjects[subject].deviation}`).join('\n')}\n2教科（国語・算数）: ${getMockAggregate(lastMockResult.subjects, ['国語', '算数']).totalScore}点 / 偏差値${getMockAggregate(lastMockResult.subjects, ['国語', '算数']).averageDeviation}\n4教科: ${getMockAggregate(lastMockResult.subjects).totalScore}点 / 偏差値${getMockAggregate(lastMockResult.subjects).averageDeviation}`
       : '未入力';
-
     return `保護者レポート\n作成日: ${getLocalDateKey()}\n\n【志望校】\n${schoolText}\n\n【前回の模試結果】\n${mockText}\n\n【学習成果・教科別】\n${subjectSummary}\n\n【学習成果・直近30日】\n${getReportDailyRecords().join('\n')}`;
   }
 
@@ -1555,7 +1543,6 @@ function updateScore() {
       await navigator.clipboard.writeText(text);
       return;
     }
-
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.setAttribute('readonly', '');
@@ -1565,7 +1552,6 @@ function updateScore() {
     textarea.select();
     const copied = document.execCommand('copy');
     textarea.remove();
-
     if (!copied) {
       throw new Error('クリップボードへのコピーに失敗しました');
     }
@@ -1577,8 +1563,6 @@ function updateScore() {
     Object.entries(views).forEach(([name, view]) => {
       view?.classList.toggle('hidden', name !== viewName);
     });
-
-    headerScoreBox?.classList.toggle('hidden', viewName !== 'score');
 
     if (viewName === 'quiz') {
       showQuestion();
@@ -2620,7 +2604,6 @@ schoolForm?.addEventListener('submit', (event) => {
 
 mockForm?.addEventListener('submit', (event) => {
   event.preventDefault();
-  const date = mockDateInput.value || getLocalDateKey();
   const subjects = MOCK_SUBJECTS.reduce((result, subject) => {
     result[subject] = {
       score: Math.max(Number(document.getElementById(`mock-score-${subject}`)?.value) || 0, 0),
@@ -2628,7 +2611,7 @@ mockForm?.addEventListener('submit', (event) => {
     };
     return result;
   }, {});
-  lastMockResult = { date, subjects };
+  lastMockResult = { date: mockDateInput.value || getLocalDateKey(), subjects };
   saveLastMockResult();
   updateScore();
   mockMessage.textContent = '模試結果を保存しました。';
@@ -2636,10 +2619,8 @@ mockForm?.addEventListener('submit', (event) => {
 });
 
 copyParentReportButton?.addEventListener('click', async () => {
-  const report = buildParentReport();
-
   try {
-    await copyTextToClipboard(report);
+    await copyTextToClipboard(buildParentReport());
     reportMessage.textContent = '保護者レポートをクリップボードにコピーしました。';
   } catch (error) {
     reportMessage.textContent = 'コピーできませんでした。ブラウザの権限を確認してください。';
@@ -2675,21 +2656,15 @@ goalTypeSelect.value = dailyGoal.type;
 goalValueInput.value = String(dailyGoal.value);
 targetSchools.forEach((school, index) => {
   const input = document.getElementById(`school-choice-${index + 1}`);
-  if (input) {
-    input.value = school;
-  }
+  if (input) input.value = school;
 });
 mockDateInput.value = lastMockResult?.date || getLocalDateKey();
 MOCK_SUBJECTS.forEach((subject) => {
   const result = lastMockResult?.subjects[subject];
   const scoreInput = document.getElementById(`mock-score-${subject}`);
   const deviationInput = document.getElementById(`mock-deviation-${subject}`);
-  if (scoreInput) {
-    scoreInput.value = result ? String(result.score) : '';
-  }
-  if (deviationInput) {
-    deviationInput.value = result ? String(result.deviation) : '';
-  }
+  if (scoreInput) scoreInput.value = result ? String(result.score) : '';
+  if (deviationInput) deviationInput.value = result ? String(result.deviation) : '';
 });
 renderProblemList();
 updateScore();

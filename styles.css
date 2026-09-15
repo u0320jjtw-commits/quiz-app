@@ -276,11 +276,6 @@ h1 {
   overflow-x: auto;
 }
 
-.score-box #score {
-  display: block;
-  text-align: left;
-}
-
 .summary-item {
   display: flex;
   flex-direction: column;
