@@ -241,27 +241,24 @@
 }
 
 .pet-character {
+  position: relative;
   display: flex;
-  height: 90%;
-  max-height: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  color: #365c74;
-  font-weight: 800;
-}
-
-.pet-character svg {
-  display: block;
-  width: auto;
-  height: calc(100% - 22px);
-  max-width: min(50vw, 360px);
+  width: min(74%, 360px);
+  aspect-ratio: 1 / 1;
+  flex: 0 1 auto;
+  overflow: hidden;
+  border-radius: 24px;
+  box-shadow: 0 10px 22px rgba(70, 143, 178, 0.14);
   animation: pet-float 2.5s ease-in-out infinite;
 }
 
-.pet-character > span {
-  margin-top: 0;
-  font-size: 1.1rem;
+.pet-character img {
+  position: absolute;
+  top: -34.4%;
+  left: -5.6%;
+  width: 430%;
+  max-width: none;
+  height: auto;
 }
 
 .pet-leave-note {

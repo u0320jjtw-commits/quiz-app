@@ -694,11 +694,11 @@ let targetSchools = loadTargetSchools();
 let lastMockResult = loadLastMockResult();
 
 const petFoods = [
-  { id: 'onigiri', name: 'おにぎり', price: 10, effect: 'おなか＋20', stats: { hunger: 20 } },
-  { id: 'vegetables', name: 'やさい', price: 20, effect: 'おなか＋10・えいよう＋10', stats: { hunger: 10, nutrition: 10 } },
-  { id: 'meat', name: 'おにく', price: 50, effect: 'おなか＋10・げんき＋10', stats: { hunger: 10, energy: 10 } },
-  { id: 'fish', name: 'さかな', price: 50, effect: 'おなか＋10・えいよう＋5・げんき＋5', stats: { hunger: 10, nutrition: 5, energy: 5 } },
-  { id: 'snack', name: 'おかし', price: 50, effect: 'おなか＋10・なつき＋10', stats: { hunger: 10, affection: 10 } },
+  { id: 'onigiri', name: 'おにぎり', price: 100, effect: 'おなか＋20', stats: { hunger: 20 } },
+  { id: 'vegetables', name: 'やさい', price: 200, effect: 'おなか＋10・えいよう＋10', stats: { hunger: 10, nutrition: 10 } },
+  { id: 'meat', name: 'おにく', price: 500, effect: 'おなか＋10・げんき＋10', stats: { hunger: 10, energy: 10 } },
+  { id: 'fish', name: 'さかな', price: 500, effect: 'おなか＋10・えいよう＋5・げんき＋5', stats: { hunger: 10, nutrition: 5, energy: 5 } },
+  { id: 'snack', name: 'おかし', price: 500, effect: 'おなか＋10・なつき＋10', stats: { hunger: 10, affection: 10 } },
 ];
 const petStatNames = { hunger: 'おなか', nutrition: 'えいよう', energy: 'げんき', affection: 'なつき' };
 const petComments = [
@@ -748,7 +748,7 @@ function createInitialPetState() {
   return {
     coins: 10,
     inventory: {},
-    stats: { hunger: 100, nutrition: 100, energy: 100, affection: 100 },
+    stats: { hunger: 50, nutrition: 50, energy: 50, affection: 10 },
     lastProcessedAt: new Date().toISOString(),
     gone: false,
     goodbyeNote: '',
@@ -880,7 +880,7 @@ function openPetPanel(panelName) {
     petPanelContent.innerHTML = `
       <ul class="pet-item-list">
         <li class="pet-item-row"><span class="pet-item-name">🪙 コイン</span><span class="pet-item-count">${petState.coins}枚</span><span class="pet-item-action"></span></li>
-        ${petFoods.map((food) => `<li class="pet-item-row"><span class="pet-item-name">${food.name}</span><span class="pet-item-count">${petState.inventory[food.id] || 0}個</span><button type="button" class="secondary-button pet-row-button" data-use-food="${food.id}" ${petState.inventory[food.id] ? '' : 'disabled'}>つかう</button></li>`).join('')}
+        ${petFoods.filter((food) => petState.inventory[food.id] > 0).map((food) => `<li class="pet-item-row"><span class="pet-item-name">${food.name}</span><span class="pet-item-count">${petState.inventory[food.id]}個</span><button type="button" class="secondary-button pet-row-button" data-use-food="${food.id}">つかう</button></li>`).join('')}
       </ul>`;
   } else if (panelName === 'shop') {
     petPanelTitle.textContent = 'かいもの';
