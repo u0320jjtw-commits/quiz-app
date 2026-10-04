@@ -3,6 +3,7 @@ const GOAL_STORAGE_KEY = 'quiz-app-daily-goal-v1';
 const HISTORY_STORAGE_KEY = 'quiz-app-answer-history-v1';
 const SCHOOL_STORAGE_KEY = 'quiz-app-target-schools-v1';
 const MOCK_STORAGE_KEY = 'quiz-app-last-mock-result-v1';
+const PET_STORAGE_KEY = 'quiz-app-pet-game-v1';
 const DEFAULT_CATEGORY = '算数';
 const DEFAULT_GRADE = 1;
 const DEFAULT_DIFFICULTY = 50;
@@ -616,6 +617,7 @@ const todayDifficultySelect = document.getElementById('today-difficulty-select')
 const todayRateSelect = document.getElementById('today-rate-select');
 const homeView = document.getElementById('home-view');
 const quizView = document.getElementById('quiz-view');
+const petView = document.getElementById('pet-view');
 const studyView = document.getElementById('study-view');
 const scoreView = document.getElementById('score-view');
 const scorePage = document.getElementById('score-page');
@@ -663,6 +665,14 @@ const mockMessage = document.getElementById('mock-message');
 const mockDateInput = document.getElementById('mock-date');
 const copyParentReportButton = document.getElementById('copy-parent-report');
 const reportMessage = document.getElementById('report-message');
+const petComment = document.getElementById('pet-comment');
+const petCharacter = document.getElementById('pet-character');
+const petCoinBadge = document.getElementById('pet-coin-badge');
+const petLeaveNote = document.getElementById('pet-leave-note');
+const petPanel = document.getElementById('pet-panel');
+const petPanelTitle = document.getElementById('pet-panel-title');
+const petPanelContent = document.getElementById('pet-panel-content');
+const petPanelMessage = document.getElementById('pet-panel-message');
 
 let problems = loadProblems();
 let currentIndex = 0;
@@ -682,6 +692,219 @@ let dailyGoal = loadDailyGoal();
 let answerHistory = loadAnswerHistory();
 let targetSchools = loadTargetSchools();
 let lastMockResult = loadLastMockResult();
+
+const petFoods = [
+  { id: 'onigiri', name: 'おにぎり', price: 10, effect: 'おなか＋20', stats: { hunger: 20 } },
+  { id: 'vegetables', name: 'やさい', price: 20, effect: 'おなか＋10・えいよう＋10', stats: { hunger: 10, nutrition: 10 } },
+  { id: 'meat', name: 'おにく', price: 50, effect: 'おなか＋10・げんき＋10', stats: { hunger: 10, energy: 10 } },
+  { id: 'fish', name: 'さかな', price: 50, effect: 'おなか＋10・えいよう＋5・げんき＋5', stats: { hunger: 10, nutrition: 5, energy: 5 } },
+  { id: 'snack', name: 'おかし', price: 50, effect: 'おなか＋10・なつき＋10', stats: { hunger: 10, affection: 10 } },
+];
+const petStatNames = { hunger: 'おなか', nutrition: 'えいよう', energy: 'げんき', affection: 'なつき' };
+const petComments = [
+  'おはよう！きょうもいっしょにあそぼうね。', 'きょうはどんなことがあるのかな？', 'そらをながめるのがだいすき！',
+  'きみのそばにいると、ほっとするよ。', 'ふわふわのくもを見つけたよ！', 'きょうもいい天気だね。',
+  'いっしょにおさんぽしたいな。', 'きみの笑顔を見るとうれしいな。', 'ぼくの名前はソラだよ！',
+  'あたらしい遊びを考えているんだ。', 'お花のにおいがするね。', '風がきもちいいね。',
+  'きみといると時間があっという間だね。', '今日はなにを食べようかな？', 'おなかがすいたら教えるね。',
+  'ゆっくり休むのも大切だよ。', 'きみの声を聞くと元気が出るよ。', '小鳥さんが歌っているね。',
+  'ぼく、きみのことが大好き！', 'きらきらのお星さまを見たいな。', 'いっしょに深呼吸しよう！',
+  '今日はどんなお勉強をしたの？', 'がんばっていてえらいね！', 'ぼくも応援しているよ。',
+  '雲の形が動物みたい！', 'あたたかい日差しがぽかぽかだね。', '雨の日もきらいじゃないよ。',
+  'きみと遊ぶのがいちばん楽しい！', 'おいしいものって幸せだね。', 'ぼくの羽、ふわふわでしょ？',
+  '今日はちょっと眠たい気分。', 'いっぱい笑うと元気になるよ。', 'きみは何色が好き？',
+  '青い空を見るとわくわくするね。', 'いっしょに歌をうたおうよ！', 'ぼくの夢は空を飛ぶこと。',
+  'きみが来てくれてうれしいな。', 'やさしくしてくれてありがとう。', '今日はすてきな日になりそう！',
+  'ぼくとじゃんけんしよう！', '公園でかけっこしたいな。', 'きみの好きな遊びはなあに？',
+  'ちいさな発見を見つけるのが好き。', '葉っぱがゆらゆら揺れているよ。', 'ぼくのお気に入りの場所はここ！',
+  '一緒にいると安心するなあ。', 'きみのことをもっと知りたいな。', '今日は何をして遊ぼうか？',
+  'おいしいごはんを食べると幸せ！', 'きみのがんばり、ちゃんと見てるよ。', '休けいも忘れないでね。',
+  'ぼくのほっぺ、ほんのりピンク！', 'なでてもらうと気持ちいいな。', 'お空の向こうには何があるのかな？',
+  'きみとお話しするのが好き。', 'ぼくは今日も元気いっぱい！', 'ゆっくり一歩ずつ進もうね。',
+  'きみの好きな食べ物を教えて！', '虹を見つけたら教えてね。', 'ぼく、ふわふわの雲に乗りたいな。',
+  '毎日ちょっとずつ楽しいことがあるね。', 'きみといると勇気がわいてくるよ。', '今日はどんな夢を見た？',
+  'ぼくの羽でぱたぱたしてみよう！', 'お花にお水をあげてきたよ。', 'ぽかぽかのお日さまにこんにちは！',
+  'きみのそばがいちばん落ち着くよ。', 'また一緒に遊ぼうね。', '今日はゆっくりお話ししよう。',
+  'ぼくの好きな季節は春だよ。', 'きみはとってもすてきな友だち！', 'おなかがいっぱいだと幸せだね。',
+  '元気な声を聞かせて！', 'いろんなことを一緒に見つけよう。', 'きみのやさしさが大好き。',
+  '今日はどんな色の空かな？', '小さなことにもありがとうを言おう。', 'ぼくのしっぽ、ぴこぴこ動くよ！',
+  'きみと一緒にいると笑顔になれる。', 'おいしいおやつの時間かな？', 'ぼくにできることはある？',
+  '新しいことに挑戦するのって楽しい！', 'ぼくはいつでもきみの味方だよ。', 'ほっとひと息つこうね。',
+  'きみの声が聞こえると安心するよ。', '今日はどこへ行ってみたい？', 'やさしい風が吹いているね。',
+  'ぼくのことを見つけてくれてありがとう。', '一緒にいるだけでうれしいんだ。', '小鳥さんにあいさつしたよ。',
+  'きみの好きな本はどんな本？', 'ぼくと秘密のお話をしよう！', 'きみの笑顔は太陽みたい。',
+  '明日もきっと楽しいことがあるよ。', 'ぼくと一緒にがんばろうね。', '今日も会えてうれしいな。',
+  'きみはぼくの大切なお友だちだよ。', 'またあとでお話ししようね。', '今日はどんな一日だった？',
+  'ぼくたち、ずっと仲良しだよ！',
+];
+const petRequests = [
+  'お水を飲みたいな。', 'おなかがすいたよ。ごはんをもらえる？', '少し休けいしたいな。',
+  '一緒にお空を見てくれる？', 'お花を見に行きたいな。', 'もう少しお話ししてほしいな。',
+  'お気に入りの歌をうたって！', 'そばにいてくれるとうれしいな。', '一緒に深呼吸しよう。',
+];
+let petState = loadPetState();
+
+function createInitialPetState() {
+  return {
+    coins: 10,
+    inventory: {},
+    stats: { hunger: 100, nutrition: 100, energy: 100, affection: 100 },
+    lastProcessedAt: new Date().toISOString(),
+    gone: false,
+    goodbyeNote: '',
+  };
+}
+
+function loadPetState() {
+  const savedState = localStorage.getItem(PET_STORAGE_KEY);
+  if (!savedState) {
+    const initialState = createInitialPetState();
+    localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(initialState));
+    return initialState;
+  }
+
+  try {
+    const parsed = JSON.parse(savedState);
+    const initialState = createInitialPetState();
+    const inventory = parsed.inventory && typeof parsed.inventory === 'object' ? parsed.inventory : {};
+    const stats = parsed.stats && typeof parsed.stats === 'object' ? parsed.stats : {};
+    const lastProcessedAt = Date.parse(parsed.lastProcessedAt);
+    return {
+      coins: Number.isFinite(Number(parsed.coins)) ? Math.max(0, Math.floor(Number(parsed.coins))) : initialState.coins,
+      inventory: Object.fromEntries(
+        petFoods.map((food) => {
+          const count = Number(inventory[food.id]);
+          return [food.id, Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0];
+        })
+      ),
+      stats: Object.fromEntries(
+        Object.keys(initialState.stats).map((key) => {
+          const value = Number(stats[key]);
+          return [key, Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : 100];
+        })
+      ),
+      lastProcessedAt: Number.isFinite(lastProcessedAt) ? new Date(lastProcessedAt).toISOString() : initialState.lastProcessedAt,
+      gone: parsed.gone === true,
+      goodbyeNote: typeof parsed.goodbyeNote === 'string' ? parsed.goodbyeNote : '',
+    };
+  } catch (error) {
+    console.error('ペットの保存データの読み込みに失敗しました', error);
+    const initialState = createInitialPetState();
+    localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(initialState));
+    return initialState;
+  }
+}
+
+function savePetState() {
+  localStorage.setItem(PET_STORAGE_KEY, JSON.stringify(petState));
+}
+
+function clampPetStat(value) {
+  return Math.min(Math.max(value, 0), 100);
+}
+
+function petLeaves(note) {
+  petState.gone = true;
+  petState.goodbyeNote = note;
+  petComment.textContent = 'いままでありがとう。ずっと忘れないよ。';
+  renderPetGame();
+}
+
+function processPetTime(now = new Date()) {
+  if (!petState.gone) {
+    const previousTime = new Date(petState.lastProcessedAt);
+    const day = new Date(previousTime.getFullYear(), previousTime.getMonth(), previousTime.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    while (day <= today && !petState.gone) {
+      for (const hour of [7, 19]) {
+        const eventTime = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour);
+        if (eventTime <= previousTime || eventTime > now) {
+          continue;
+        }
+
+        petState.stats.hunger = clampPetStat(petState.stats.hunger - 50);
+        petState.stats.nutrition = clampPetStat(petState.stats.nutrition - 30);
+
+        if (hour === 7) {
+          petState.stats.energy = clampPetStat(petState.stats.energy + Math.floor(Math.random() * 11) - 5);
+          petState.stats.affection = clampPetStat(petState.stats.affection + Math.floor(Math.random() * 11) - 5);
+          if (petState.stats.nutrition === 0) {
+            petState.stats.energy = clampPetStat(petState.stats.energy - 10);
+          }
+        }
+
+        if (petState.stats.hunger === 0) {
+          petLeaves('おなかがすいて、ソラは旅に出ました。いままでありがとう。');
+          break;
+        }
+        if (petState.stats.affection === 0) {
+          petLeaves('さみしくなったソラは、手紙を残して旅に出ました。いままでありがとう。');
+          break;
+        }
+      }
+      day.setDate(day.getDate() + 1);
+    }
+  }
+
+  petState.lastProcessedAt = now.toISOString();
+  savePetState();
+  renderPetGame();
+}
+
+function renderPetGame() {
+  if (!petComment || !petCharacter) {
+    return;
+  }
+  petCoinBadge.textContent = `🪙 ${petState.coins}`;
+  petCharacter.classList.toggle('hidden', petState.gone);
+  petLeaveNote.textContent = petState.goodbyeNote;
+  petLeaveNote.classList.toggle('hidden', !petState.gone);
+  document.querySelectorAll('.pet-action-button').forEach((button) => {
+    button.disabled = petState.gone;
+  });
+  if (petState.gone) {
+    petComment.textContent = 'ソラはいなくなってしまいました。';
+  } else if (!petComment.textContent) {
+    petComment.textContent = petComments[Math.floor(Math.random() * petComments.length)];
+  }
+}
+
+function openPetPanel(panelName) {
+  if (petState.gone) {
+    return;
+  }
+  petPanelMessage.textContent = '';
+  if (panelName === 'inventory') {
+    petPanelTitle.textContent = 'もちもの';
+    petPanelContent.innerHTML = `
+      <ul class="pet-item-list">
+        <li class="pet-item-row"><span class="pet-item-name">🪙 コイン</span><span class="pet-item-count">${petState.coins}枚</span><span class="pet-item-action"></span></li>
+        ${petFoods.map((food) => `<li class="pet-item-row"><span class="pet-item-name">${food.name}</span><span class="pet-item-count">${petState.inventory[food.id] || 0}個</span><button type="button" class="secondary-button pet-row-button" data-use-food="${food.id}" ${petState.inventory[food.id] ? '' : 'disabled'}>つかう</button></li>`).join('')}
+      </ul>`;
+  } else if (panelName === 'shop') {
+    petPanelTitle.textContent = 'かいもの';
+    petPanelContent.innerHTML = `
+      <ul class="pet-item-list">
+        ${petFoods.map((food) => `<li class="pet-item-row pet-shop-row"><span class="pet-item-name">${food.name}<small>${food.effect}</small></span><span class="pet-item-count">${food.price}コイン</span><button type="button" class="primary-button pet-row-button" data-buy-food="${food.id}" ${petState.coins < food.price ? 'disabled' : ''}>かう</button></li>`).join('')}
+      </ul>`;
+  } else if (panelName === 'health') {
+    petPanelTitle.textContent = 'けんこうかんり';
+    petPanelContent.innerHTML = `<div class="pet-health-list">${Object.entries(petStatNames).map(([stat, label]) => `
+      <div class="pet-health-row">
+        <span>${label}</span>
+        <div class="pet-health-track" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${petState.stats[stat]}"><span style="width:${petState.stats[stat]}%"></span></div>
+        <strong>${petState.stats[stat]}</strong>
+      </div>`).join('')}</div>`;
+  }
+  petPanel.classList.remove('hidden');
+  petPanel.setAttribute('aria-hidden', 'false');
+}
+
+function closePetPanel() {
+  petPanel.classList.add('hidden');
+  petPanel.setAttribute('aria-hidden', 'true');
+}
 
 function normalizeProblem(problem) {
   const mappedCategory = problem.category && CATEGORY_ALIASES[problem.category];
@@ -1558,11 +1781,12 @@ function updateScore() {
   }
 
   function switchView(viewName) {
-    const views = { home: homeView, quiz: quizView, study: studyView, score: scoreView };
+    const views = { home: homeView, quiz: quizView, study: studyView, score: scoreView, pet: petView };
 
     Object.entries(views).forEach(([name, view]) => {
       view?.classList.toggle('hidden', name !== viewName);
     });
+    document.getElementById('open-pet-game')?.classList.toggle('hidden', viewName !== 'home');
 
     if (viewName === 'quiz') {
       showQuestion();
@@ -1574,6 +1798,13 @@ function updateScore() {
 
     if (viewName === 'score') {
       renderScorePage();
+    }
+
+    if (viewName === 'pet') {
+      processPetTime();
+      if (!petState.gone) {
+        petComment.textContent = petComments[Math.floor(Math.random() * petComments.length)];
+      }
     }
   }
 
@@ -1751,12 +1982,15 @@ function checkAnswer() {
   if (isCorrect) {
     currentProblem.stats.correct += 1;
     score += 1;
+    petState.coins += 1;
+    savePetState();
+    renderPetGame();
     updateScore();
     renderProblemList();
     saveProblems();
     renderTodayGoalProgress();
 
-    result.textContent = 'せいかい！すごいね！';
+    result.textContent = 'せいかい！すごいね！コインを1枚もらったよ！';
     result.classList.remove('error');
     result.classList.add('success');
     result.classList.remove('hidden');
@@ -2321,6 +2555,57 @@ document.querySelectorAll('[data-view]').forEach((button) => {
   });
 });
 
+document.querySelectorAll('[data-pet-panel]').forEach((button) => {
+  button.addEventListener('click', () => openPetPanel(button.dataset.petPanel));
+});
+
+document.getElementById('pet-pat-button')?.addEventListener('click', () => {
+  if (petState.gone) {
+    return;
+  }
+  const request = petRequests[Math.floor(Math.random() * petRequests.length)];
+  petComment.textContent = `なでてくれてありがとう！お願いがあるんだ。${request}`;
+});
+
+petPanel.addEventListener('click', (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+  if (event.target.closest('[data-close-pet-panel]')) {
+    closePetPanel();
+    return;
+  }
+
+  const buyButton = event.target.closest('[data-buy-food]');
+  if (buyButton) {
+    const food = petFoods.find((item) => item.id === buyButton.dataset.buyFood);
+    if (!food || petState.coins < food.price) {
+      return;
+    }
+    petState.coins -= food.price;
+    petState.inventory[food.id] = (petState.inventory[food.id] || 0) + 1;
+    savePetState();
+    renderPetGame();
+    openPetPanel('shop');
+    petPanelMessage.textContent = `${food.name}を買ったよ！`;
+    return;
+  }
+
+  const useButton = event.target.closest('[data-use-food]');
+  if (useButton) {
+    const food = petFoods.find((item) => item.id === useButton.dataset.useFood);
+    if (!food || !petState.inventory[food.id]) {
+      return;
+    }
+    petState.inventory[food.id] -= 1;
+    applyPetFood(food);
+    savePetState();
+    renderPetGame();
+    openPetPanel('inventory');
+    petPanelMessage.textContent = `${food.name}をつかったよ！ソラがよろこんでいるよ。`;
+  }
+});
+
 if (studyRevealButton) {
   studyRevealButton.addEventListener('click', () => {
     studyAnswer.classList.remove('hidden');
@@ -2669,4 +2954,12 @@ MOCK_SUBJECTS.forEach((subject) => {
 renderProblemList();
 updateScore();
 renderTodayGoalProgress();
+renderPetGame();
+processPetTime();
+window.setInterval(() => processPetTime(), 60_000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    processPetTime();
+  }
+});
 switchView('home');

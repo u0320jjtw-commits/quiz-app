@@ -45,7 +45,59 @@
             <span class="home-menu-note">問題を追加・整理する</span>
           </button>
         </section>
+        <button type="button" id="open-pet-game" class="pet-corner-button" data-view="pet">
+          <span aria-hidden="true">🐾</span> Pet
+        </button>
       </main>
+
+      <main id="pet-view" class="pet-view hidden">
+        <section class="pet-game panel" aria-label="ソラの育成ゲーム">
+          <div class="pet-scene">
+            <div class="pet-scene-header">
+              <button type="button" class="ghost-button" data-view="home">ホーム</button>
+              <span class="pet-name">ソラ</span>
+              <span id="pet-coin-badge" class="pet-coin-badge">🪙 10</span>
+            </div>
+            <div id="pet-character" class="pet-character" role="img" aria-label="ソラ">
+              <svg viewBox="0 0 240 260" aria-hidden="true">
+                <ellipse cx="120" cy="226" rx="75" ry="16" fill="#aedce8" opacity=".55" />
+                <path d="M44 170c-9-27 3-56 24-70-2-31 22-59 53-59 28 0 49 21 53 48 23 10 38 34 34 60-3 20-18 37-37 44-14 20-34 31-58 31-30 0-56-20-69-54Z" fill="#fff" stroke="#75cce3" stroke-width="6" />
+                <path d="M67 140c-19-14-29-3-26 12 3 14 17 21 33 17M174 143c21-14 31-3 28 12-3 14-17 21-34 17" fill="#c9f3fb" stroke="#75cce3" stroke-width="5" stroke-linecap="round" />
+                <path d="M89 155c10-7 19-7 27 0M137 155c10-7 19-7 27 0" fill="none" stroke="#405b70" stroke-width="6" stroke-linecap="round" />
+                <ellipse cx="76" cy="172" rx="12" ry="7" fill="#ffb5c0" /><ellipse cx="166" cy="172" rx="12" ry="7" fill="#ffb5c0" />
+                <path d="m112 165 10 8 10-8-10-5Z" fill="#ffbc72" />
+                <path d="M112 188c6 7 14 7 20 0" fill="none" stroke="#405b70" stroke-width="4" stroke-linecap="round" />
+                <path d="M100 93c7-15 18-24 31-27" fill="none" stroke="#d5f6ff" stroke-width="12" stroke-linecap="round" />
+                <path d="M84 211c-9 10-9 19 2 20h29M156 211c9 10 9 19-2 20h-29" fill="#ffbc72" stroke="#f3a45e" stroke-width="4" stroke-linecap="round" />
+                <path d="M192 77c11-17 28-17 34-3-10 0-16 6-18 16" fill="#ffcf77" />
+              </svg>
+              <span>ソラ</span>
+            </div>
+            <p id="pet-leave-note" class="pet-leave-note hidden" aria-live="polite"></p>
+          </div>
+          <div class="pet-comment-area">
+            <p id="pet-comment" class="pet-comment" aria-live="polite"></p>
+          </div>
+          <nav class="pet-actions" aria-label="ペットのメニュー">
+            <button type="button" class="pet-action-button" data-pet-panel="inventory"><span aria-hidden="true">🎒</span>もちもの</button>
+            <button type="button" id="pet-pat-button" class="pet-action-button"><span aria-hidden="true">🖐️</span>なでる</button>
+            <button type="button" class="pet-action-button" data-pet-panel="shop"><span aria-hidden="true">🛍️</span>かいもの</button>
+            <button type="button" class="pet-action-button" data-pet-panel="health"><span aria-hidden="true">💗</span>けんこうかんり</button>
+          </nav>
+        </section>
+      </main>
+
+      <div id="pet-panel" class="pet-modal hidden" aria-hidden="true">
+        <button type="button" class="pet-modal-backdrop" data-close-pet-panel aria-label="閉じる"></button>
+        <section class="pet-modal-card panel" role="dialog" aria-modal="true" aria-labelledby="pet-panel-title">
+          <div class="subscreen-header">
+            <h2 id="pet-panel-title"></h2>
+            <button type="button" class="ghost-button" data-close-pet-panel>とじる</button>
+          </div>
+          <div id="pet-panel-content"></div>
+          <p id="pet-panel-message" class="form-message" aria-live="polite"></p>
+        </section>
+      </div>
 
       <main id="quiz-view" class="layout hidden">
         <section class="panel quiz-panel">
