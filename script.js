@@ -673,6 +673,7 @@ const petPanel = document.getElementById('pet-panel');
 const petPanelTitle = document.getElementById('pet-panel-title');
 const petPanelContent = document.getElementById('pet-panel-content');
 const petPanelMessage = document.getElementById('pet-panel-message');
+const petReleaseButton = document.getElementById('pet-release-button');
 
 let problems = loadProblems();
 let currentIndex = 0;
@@ -699,9 +700,26 @@ const petFoods = [
   { id: 'meat', name: 'おにく', price: 500, effect: 'おなか＋10・げんき＋10', stats: { hunger: 10, energy: 10 } },
   { id: 'fish', name: 'さかな', price: 500, effect: 'おなか＋10・えいよう＋5・げんき＋5', stats: { hunger: 10, nutrition: 5, energy: 5 } },
   { id: 'snack', name: 'おかし', price: 500, effect: 'おなか＋10・なつき＋10', stats: { hunger: 10, affection: 10 } },
+  { id: 'weed', name: 'ざっそう', price: 10, effect: 'おなか＋5・なつき－10・とてもまずい', stats: { hunger: 5, affection: -10 } },
+  { id: 'acorn', name: 'どんぐり', price: 50, effect: 'おなか＋5・なつき－5・おいしくない', stats: { hunger: 5, affection: -5 } },
+  { id: 'salt-rice-ball', name: 'しおむすび', price: 300, effect: 'おなか＋20・おいしい', stats: { hunger: 20 } },
+  { id: 'salad-stick', name: 'サラダスティック', price: 350, effect: 'えいよう＋10・おいしい', stats: { nutrition: 10 } },
+  { id: 'steak', name: 'ステーキ', price: 1000, effect: 'おなか＋10・げんき＋10・おいしい', stats: { hunger: 10, energy: 10 } },
+  { id: 'doughnut', name: 'ドーナッツ', price: 800, effect: 'なつき＋15・おいしい', stats: { affection: 15 } },
+  { id: 'pencil', name: 'えんぴつ', price: 100, effect: 'あたま＋1', stats: { intelligence: 1 } },
+  { id: 'jump-rope', name: 'なわとび', price: 200, effect: 'たいりょく＋1', stats: { stamina: 1 } },
+  { id: 'toy', name: 'おもちゃ', price: 500, effect: 'こころ＋1', stats: { mind: 1 } },
 ];
-const petStatNames = { hunger: 'おなか', nutrition: 'えいよう', energy: 'げんき', affection: 'なつき' };
-const petComments = [
+const petStatNames = {
+  intelligence: 'あたま',
+  stamina: 'たいりょく',
+  mind: 'こころ',
+  hunger: 'おなか',
+  nutrition: 'えいよう',
+  energy: 'げんき',
+  affection: 'なつき',
+};
+const basePetComments = [
   'おはよう！きょうもいっしょにあそぼうね。', 'きょうはどんなことがあるのかな？', 'そらをながめるのがだいすき！',
   'きみのそばにいると、ほっとするよ。', 'ふわふわのくもを見つけたよ！', 'きょうもいい天気だね。',
   'いっしょにおさんぽしたいな。', 'きみの笑顔を見るとうれしいな。', 'ぼくの名前はソラだよ！',
@@ -737,18 +755,62 @@ const petComments = [
   'きみはぼくの大切なお友だちだよ。', 'またあとでお話ししようね。', '今日はどんな一日だった？',
   'ぼくたち、ずっと仲良しだよ！',
 ];
-const petRequests = [
-  'お水を飲みたいな。', 'おなかがすいたよ。ごはんをもらえる？', '少し休けいしたいな。',
-  '一緒にお空を見てくれる？', 'お花を見に行きたいな。', 'もう少しお話ししてほしいな。',
-  'お気に入りの歌をうたって！', 'そばにいてくれるとうれしいな。', '一緒に深呼吸しよう。',
+const petCommentOpeners = [
+  'ねえ、きみ！', 'きょうはね、', 'ちょっと聞いて！', 'ぼくね、', 'きみといると、',
+  'あのね、', 'そういえば、', 'いまね、', 'きみ、知ってる？', 'ぼくからお願い！',
 ];
+const petCommentTopics = [
+  'お空をながめるのが好き', '一緒に遊ぶと楽しい', 'きみの笑顔を見るとうれしい',
+  'お花のにおいにわくわくする', 'ゆっくり休むのも大切', 'おなかがすいたよ、ごはんが食べたい',
+  'もっとおいしいものが食べたいな', 'おいしいおやつを一緒に食べたい',
+  'きみとお話しするのが好き', '今日も会えてうれしい',
+];
+const petCommentEndings = [
+  'よ。', 'ね。', 'なあ。', '！', 'かな？', 'いっしょにどう？',
+  'できたらうれしいな。', 'きみはどう思う？', '楽しみだな。', 'ありがとう！',
+];
+const petComments = createPetDialogues(petCommentOpeners, petCommentTopics, petCommentEndings, basePetComments);
+const petRequests = createPetDialogues([
+  'ねえ、お願い！', 'きみにお願いがあるんだ。', 'ちょっと聞いて！', 'ぼくね、',
+  'できたらでいいんだけど、', 'きみと一緒に、', 'あのね、', 'いまね、',
+  '今日は、', '次は、',
+], [
+  'おなかがすいたからごはんがほしい', 'もっとおいしいものを食べたい',
+  'おいしいおやつが食べたい', 'お水を飲みたい', '少し休けいしたい',
+  '一緒にお空を見たい', 'お花を見に行きたい', 'もう少しお話ししたい',
+  'お気に入りの歌をうたってほしい', '一緒に深呼吸したい',
+], petCommentEndings);
+
+function createPetDialogues(openers, topics, endings, initialPhrases = []) {
+  const dialogues = new Set(initialPhrases);
+  for (const opener of openers) {
+    for (const topic of topics) {
+      for (const ending of endings) {
+        dialogues.add(`${opener}${topic}${ending}`);
+        if (dialogues.size === 1000) {
+          return [...dialogues];
+        }
+      }
+    }
+  }
+  return [...dialogues];
+}
+
 let petState = loadPetState();
 
 function createInitialPetState() {
   return {
     coins: 10,
     inventory: {},
-    stats: { hunger: 50, nutrition: 50, energy: 50, affection: 10 },
+    stats: {
+      intelligence: 5,
+      stamina: 5,
+      mind: 5,
+      hunger: 50,
+      nutrition: 50,
+      energy: 50,
+      affection: 10,
+    },
     lastProcessedAt: new Date().toISOString(),
     gone: false,
     goodbyeNote: '',
@@ -780,7 +842,7 @@ function loadPetState() {
       stats: Object.fromEntries(
         Object.keys(initialState.stats).map((key) => {
           const value = Number(stats[key]);
-          return [key, Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : 100];
+          return [key, Number.isFinite(value) ? Math.min(Math.max(value, 0), 100) : initialState.stats[key]];
         })
       ),
       lastProcessedAt: Number.isFinite(lastProcessedAt) ? new Date(lastProcessedAt).toISOString() : initialState.lastProcessedAt,
@@ -801,6 +863,12 @@ function savePetState() {
 
 function clampPetStat(value) {
   return Math.min(Math.max(value, 0), 100);
+}
+
+function applyPetFood(food) {
+  Object.entries(food.stats).forEach(([stat, change]) => {
+    petState.stats[stat] = clampPetStat(petState.stats[stat] + change);
+  });
 }
 
 function petLeaves(note) {
@@ -2565,6 +2633,17 @@ document.getElementById('pet-pat-button')?.addEventListener('click', () => {
   }
   const request = petRequests[Math.floor(Math.random() * petRequests.length)];
   petComment.textContent = `なでてくれてありがとう！お願いがあるんだ。${request}`;
+});
+
+petReleaseButton?.addEventListener('click', () => {
+  if (!window.confirm('ソラを逃がして、コインやステータスを初期化します。よろしいですか？')) {
+    return;
+  }
+  petState = createInitialPetState();
+  savePetState();
+  petComment.textContent = petComments[Math.floor(Math.random() * petComments.length)];
+  closePetPanel();
+  renderPetGame();
 });
 
 petPanel.addEventListener('click', (event) => {
