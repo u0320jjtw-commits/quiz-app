@@ -7,6 +7,8 @@ const PET_STORAGE_KEY = 'quiz-app-pet-game-v1';
 const DEFAULT_CATEGORY = '算数';
 const DEFAULT_GRADE = 1;
 const DEFAULT_DIFFICULTY = 50;
+const MAX_MASTERY_LEVEL = 6;
+const MASTERY_REVIEW_INTERVALS = { 2: 1, 3: 3, 4: 7, 5: 14, 6: 30 };
 const CATEGORY_OPTIONS = ['国語', '算数', '理科', '社会', '英語'];
 const MOCK_SUBJECTS = ['国語', '算数', '理科', '社会'];
 const CATEGORY_ALIASES = { 社会英語: '社会' };
@@ -615,6 +617,9 @@ const todayCategorySelect = document.getElementById('today-category-select');
 const todayGradeSelect = document.getElementById('today-grade-select');
 const todayDifficultySelect = document.getElementById('today-difficulty-select');
 const todayRateSelect = document.getElementById('today-rate-select');
+const quizStartNumberInput = document.getElementById('quiz-start-number');
+const todayQuizButton = document.getElementById('today-quiz-button');
+const quizModeDescription = document.getElementById('quiz-mode-description');
 const homeView = document.getElementById('home-view');
 const quizView = document.getElementById('quiz-view');
 const petView = document.getElementById('pet-view');
@@ -626,6 +631,7 @@ const studyGradeSelect = document.getElementById('study-grade-select');
 const studyDifficultySelect = document.getElementById('study-difficulty-select');
 const studyRateSelect = document.getElementById('study-rate-select');
 const studyReviewSelect = document.getElementById('study-review-select');
+const studyStartNumberInput = document.getElementById('study-start-number');
 const studyAnswerVisible = document.getElementById('study-answer-visible');
 const studyProgress = document.getElementById('study-progress');
 const studyCategory = document.getElementById('study-category');
@@ -686,6 +692,7 @@ let selectedQuizRateLimit = 'すべて';
 let selectedAnswerMode = 'text';
 let selectedAnswerChoiceIndex = null;
 let studyIndex = 0;
+let todayQuizMode = false;
 let quizOrderMode = 'serial';
 let quizProblemOrder = [];
 let studyFilters = { category: 'すべて', grade: 'すべて', difficulty: 'すべて', rate: 'すべて', review: 'all' };
@@ -1009,6 +1016,10 @@ function normalizeProblem(problem) {
       attempts: Number(problem.stats?.attempts || 0),
       correct: Number(problem.stats?.correct || 0),
     },
+    mastery: Math.min(Math.max(Math.floor(Number(problem.mastery) || 1), 1), MAX_MASTERY_LEVEL),
+    lastCorrectDate: /^\d{4}-\d{2}-\d{2}$/.test(problem.lastCorrectDate || '')
+      ? problem.lastCorrectDate
+      : null,
   };
 }
 
@@ -1102,6 +1113,30 @@ function getLocalDateKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function getDaysSinceDate(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey || '')) {
+    return null;
+  }
+
+  const dateTimestamp = Date.parse(`${dateKey}T00:00:00Z`);
+  const todayParts = getLocalDateKey().split('-').map(Number);
+  const todayTimestamp = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]);
+  if (!Number.isFinite(dateTimestamp) || new Date(dateTimestamp).toISOString().slice(0, 10) !== dateKey) {
+    return null;
+  }
+  return Math.floor((todayTimestamp - dateTimestamp) / 86400000);
+}
+
+function isProblemDue(problem) {
+  if (problem.mastery <= 1) {
+    return true;
+  }
+
+  const reviewInterval = MASTERY_REVIEW_INTERVALS[problem.mastery];
+  const daysSinceLastCorrect = getDaysSinceDate(problem.lastCorrectDate);
+  return daysSinceLastCorrect === null || daysSinceLastCorrect >= reviewInterval;
 }
 
 function loadAnswerHistory() {
@@ -1501,6 +1536,10 @@ function matchesDifficultyRange(problemDifficulty, difficultyRange) {
 function getVisibleProblems() {
   let visibleProblems = problems;
 
+  if (todayQuizMode) {
+    visibleProblems = visibleProblems.filter(isProblemDue);
+  }
+
   if (selectedQuizCategory !== 'すべて') {
     visibleProblems = visibleProblems.filter((problem) => problem.category === selectedQuizCategory);
   }
@@ -1529,6 +1568,12 @@ function getVisibleProblems() {
 
   quizProblemOrder = visibleProblems;
   return visibleProblems;
+}
+
+function getQuestionStartIndex(input, questionCount) {
+  const requestedNumber = Number(input.value);
+  const normalizedNumber = Number.isFinite(requestedNumber) ? Math.floor(requestedNumber) : 1;
+  return Math.min(Math.max(normalizedNumber, 1), questionCount) - 1;
 }
 
 function renderProblemList() {
@@ -1899,15 +1944,14 @@ function updateScore() {
     });
   }
 
-  function getProblemExplanation(problem) {
-    return problem.explanation || `答えは「${problem.answer}」です。問題文のキーワードと答えを結びつけて覚えましょう。`;
-  }
-
   function showStudyQuestion() {
     const studyProblems = getStudyProblems();
 
     if (studyProblems.length === 0) {
       studyProgress.textContent = '';
+      studyStartNumberInput.max = '1';
+      studyStartNumberInput.value = '1';
+      studyStartNumberInput.disabled = true;
       studyCategory.textContent = 'カテゴリ';
       studyQuestion.textContent = '問題を追加してね！';
       studyAnswer.textContent = '';
@@ -1921,11 +1965,22 @@ function updateScore() {
       studyIndex = 0;
     }
 
+    studyStartNumberInput.max = String(studyProblems.length);
+    studyStartNumberInput.value = String(studyIndex + 1);
+    studyStartNumberInput.disabled = false;
     const currentProblem = studyProblems[studyIndex];
     studyProgress.textContent = `${studyIndex + 1} / ${studyProblems.length} 問`;
     studyCategory.textContent = currentProblem.category;
     studyQuestion.textContent = currentProblem.question;
-    studyAnswer.innerHTML = `<strong>答え：${currentProblem.answer}</strong><p>${getProblemExplanation(currentProblem)}</p>`;
+    studyAnswer.replaceChildren();
+    const answerLabel = document.createElement('strong');
+    answerLabel.textContent = `答え：${currentProblem.answer}`;
+    studyAnswer.append(answerLabel);
+    if (currentProblem.explanation) {
+      const explanation = document.createElement('p');
+      explanation.textContent = currentProblem.explanation;
+      studyAnswer.append(explanation);
+    }
     const answerIsVisible = studyAnswerVisible?.checked === true;
     studyAnswer.classList.toggle('hidden', !answerIsVisible);
     studyRevealButton.classList.toggle('hidden', answerIsVisible);
@@ -1967,12 +2022,23 @@ function closeProblemSubscreen() {
 
 function showQuestion() {
   const visibleProblems = getVisibleProblems();
+  todayQuizButton?.setAttribute('aria-pressed', String(todayQuizMode));
+  quizModeDescription?.classList.toggle('hidden', !todayQuizMode);
 
   if (visibleProblems.length === 0) {
-    questionText.textContent = selectedQuizCategory === 'すべて'
-      ? '問題を追加してね！'
+    quizStartNumberInput.max = '1';
+    quizStartNumberInput.value = '1';
+    quizStartNumberInput.disabled = true;
+    questionText.textContent = todayQuizMode
+      ? '今日勉強する問題はないよ！'
+      : selectedQuizCategory === 'すべて'
+        ? '問題を追加してね！'
       : `${selectedQuizCategory}の問題はまだないよ！`;
-    quizCategory.textContent = selectedQuizCategory === 'すべて' ? 'カテゴリ' : selectedQuizCategory;
+    quizCategory.textContent = todayQuizMode
+      ? '今日のクイズ'
+      : selectedQuizCategory === 'すべて'
+        ? 'カテゴリ'
+        : selectedQuizCategory;
     answerField.value = '';
     answerField.disabled = true;
     checkButton.disabled = true;
@@ -1989,6 +2055,9 @@ function showQuestion() {
     currentIndex = 0;
   }
 
+  quizStartNumberInput.max = String(visibleProblems.length);
+  quizStartNumberInput.value = String(currentIndex + 1);
+  quizStartNumberInput.disabled = false;
   answerField.disabled = false;
   checkButton.disabled = false;
   answerField.value = '';
@@ -2049,6 +2118,8 @@ function checkAnswer() {
 
   if (isCorrect) {
     currentProblem.stats.correct += 1;
+    currentProblem.mastery = Math.min(currentProblem.mastery + 1, MAX_MASTERY_LEVEL);
+    currentProblem.lastCorrectDate = getLocalDateKey();
     score += 1;
     petState.coins += 1;
     savePetState();
@@ -2066,14 +2137,19 @@ function checkAnswer() {
     answerField.disabled = true;
     checkButton.disabled = true;
 
+    if (todayQuizMode && quizOrderMode === 'random') {
+      quizProblemOrder = quizProblemOrder.filter((problem) => problem.id !== currentProblem.id);
+    }
+
     window.setTimeout(() => {
-      moveToNextQuestion();
+      moveToNextQuestion(true);
     }, 900);
 
     return;
   }
 
   result.textContent = `ちがうよ。答えは「${currentProblem.answer}」だよ。`;
+  currentProblem.mastery = 1;
   result.classList.remove('success');
   result.classList.add('error');
   result.classList.remove('hidden');
@@ -2086,9 +2162,11 @@ function checkAnswer() {
   nextButton.classList.remove('hidden');
 }
 
-function moveToNextQuestion() {
+function moveToNextQuestion(answeredCorrectly = false) {
   const visibleProblems = getVisibleProblems();
-  currentIndex += 1;
+  if (!todayQuizMode || !answeredCorrectly) {
+    currentIndex += 1;
+  }
 
   if (currentIndex >= visibleProblems.length) {
     showFinish();
@@ -2707,6 +2785,15 @@ if (studyCategorySelect) {
   });
 }
 
+studyStartNumberInput?.addEventListener('change', () => {
+  const studyProblems = getStudyProblems();
+  if (studyProblems.length === 0) {
+    return;
+  }
+  studyIndex = getQuestionStartIndex(studyStartNumberInput, studyProblems.length);
+  showStudyQuestion();
+});
+
 restartButton.addEventListener('click', resetQuiz);
 
 resetAllButton.addEventListener('click', () => {
@@ -2714,6 +2801,9 @@ resetAllButton.addEventListener('click', () => {
   currentIndex = 0;
   score = 0;
   updateScore();
+  quizStartNumberInput.max = '1';
+  quizStartNumberInput.value = '1';
+  quizStartNumberInput.disabled = true;
   saveProblems();
   renderProblemList();
   questionText.textContent = '問題を追加してね！';
@@ -2921,6 +3011,26 @@ if (todayRateSelect) {
     showQuestion();
   });
 }
+
+todayQuizButton?.addEventListener('click', () => {
+  todayQuizMode = !todayQuizMode;
+  currentIndex = 0;
+  score = 0;
+  quizProblemOrder = [];
+  updateScore();
+  showQuestion();
+});
+
+quizStartNumberInput?.addEventListener('change', () => {
+  const visibleProblems = getVisibleProblems();
+  if (visibleProblems.length === 0) {
+    return;
+  }
+  currentIndex = getQuestionStartIndex(quizStartNumberInput, visibleProblems.length);
+  score = 0;
+  updateScore();
+  showQuestion();
+});
 
 document.querySelectorAll('input[name="quiz-order-mode"]').forEach((input) => {
   input.addEventListener('change', (event) => {

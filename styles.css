@@ -1448,6 +1448,27 @@ button:hover {
   font-weight: 700;
 }
 
+.quiz-badge-button {
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.quiz-badge-button[aria-pressed='true'] {
+  box-shadow: 0 0 0 3px var(--orange);
+}
+
+.quiz-badge-button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+
+.quiz-mode-description {
+  color: #806565;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .quiz-category-select {
   width: auto;
   min-width: 140px;
@@ -1456,6 +1477,12 @@ button:hover {
   background: #fff;
   padding: 10px 12px;
   font-size: 0.95rem;
+}
+
+.question-start-number {
+  width: 88px;
+  min-width: 0;
+  text-align: center;
 }
 
 .quiz-category {
@@ -1709,6 +1736,7 @@ button:hover {
   }
 
   .study-filter-row select,
+  .study-filter-row .question-start-number,
   .study-actions button {
     width: 100%;
   }
